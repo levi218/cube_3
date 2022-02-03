@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "jsx": "react",
-    "strict": true,
+    "strict": false,
     "baseUrl": ".",
     "allowJs": true,
     "outDir": "dist",
@@ -10,7 +10,7 @@
     "target": "ES2016",
     "skipLibCheck": true,
     "lib": ["ES6", "DOM"],
-    "noImplicitAny": true,
+    // "noImplicitAny": false,
     "esModuleInterop": true,
     "moduleResolution": "node",
     "importsNotUsedAsValues": "preserve",
