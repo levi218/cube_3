@@ -2,15 +2,19 @@ import { GameObject } from '@/common/gameObject';
 import { QAnimation } from '@/common/qAnimation';
 import { KEY_COLORS } from '@/constants';
 import p5 from 'p5';
-import { Coordinate } from './coordinate';
+import { Coordinate } from '../common/coordinate';
 
 export class DoorRingDisappearAnimation extends QAnimation {
+  constructor(s: p5, gameObject: GameObject) {
+    super(s, gameObject);
+  }
   animate(): void {
     this.gameObject.scale = new Coordinate(
-      this.s.lerp(this.gameObject.scale.x, 0, 0.01),
-      this.s.lerp(this.gameObject.scale.y, 0, 0.01),
-      this.s.lerp(this.gameObject.scale.z, 0, 0.01),
+      this.s.lerp(this.gameObject.scale.x, 0, 0.03),
+      this.s.lerp(this.gameObject.scale.y, 0, 0.03),
+      this.s.lerp(this.gameObject.scale.z, 0, 0.03),
     );
+    super.animate();
     if (this.gameObject.scale.x < 0.1) {
       console.log('animation done');
       super.finish();
@@ -60,14 +64,25 @@ export class DoorRing extends GameObject {
 export class Door extends GameObject {
   public doorOpened = false;
   public doorAnimationTime = 0;
-  constructor(s: p5, position: Coordinate, ringStatuses: boolean[] = []) {
-    super(s, position);
+  constructor(
+    gameRoot: GameObject,
+    position: Coordinate,
+    ringStatuses: boolean[] = [],
+  ) {
+    super(gameRoot.s, position, gameRoot);
     if (ringStatuses.length > KEY_COLORS.length) {
       ringStatuses = ringStatuses.slice(0, KEY_COLORS.length);
     }
     ringStatuses.forEach((status, index) => {
       this.children.push(
-        new DoorRing(s, position, this, KEY_COLORS[index], index, status),
+        new DoorRing(
+          gameRoot.s,
+          position,
+          this,
+          KEY_COLORS[index],
+          index,
+          status,
+        ),
       );
     });
   }
@@ -84,6 +99,7 @@ export class Door extends GameObject {
   }
 
   _draw(): void {
+    // console.log('door draw');
     // TODO: DOOR
     if (!this.doorOpened) {
       // for (let i = 0; i < KEY_COLORS.length; i++) {

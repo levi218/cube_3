@@ -1,4 +1,4 @@
-import { Coordinate } from './entities/coordinate';
+import { Coordinate } from './common/coordinate';
 
 enum DirectionName {
   UP = 'UP',

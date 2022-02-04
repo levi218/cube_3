@@ -6,6 +6,7 @@ export class QAnimation {
   constructor(public s: p5, public gameObject: GameObject) {}
   animate(): void {
     // console.log('animate');
+    this.gameObject._draw();
   }
   finish(): void {
     this.isDone = true;

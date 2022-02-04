@@ -1,18 +1,22 @@
 import { SCALE_UNIT } from '@/constants';
-import { Coordinate } from '@/entities/coordinate';
+import { Coordinate } from '@/common/coordinate';
 import p5 from 'p5';
 import { QAnimation } from './qAnimation';
+import { GameRoot } from '@/entities/gameRoot';
 
 export class GameObject {
+  static DEFAULT_SCALE = new Coordinate(1, 1, 1);
+  static DEFAULT_ROTATION = new Coordinate(0, 0, 0);
   protected time = 0;
   constructor(
     public s: p5,
-    public pos: Coordinate,
-    public scale: Coordinate = { x: 1, y: 1, z: 1 },
-    public rotation: Coordinate = { x: 0, y: 0, z: 0 },
+    public position: Coordinate,
+    public gameRoot: GameObject = undefined,
+    public parent: GameObject = undefined,
+    public scale = GameObject.DEFAULT_SCALE,
+    public rotation = GameObject.DEFAULT_ROTATION,
     public children: GameObject[] = [],
     public animations: QAnimation[] = [],
-    public parent: GameObject = undefined,
   ) {
     // console.log('GameObject created');
   }
@@ -27,27 +31,44 @@ export class GameObject {
 
   draw(): void {
     this.time += this.s.deltaTime;
-    this.doAnimation();
-    this.children.forEach((e) => e.doAnimation());
     this.s.push();
-    this.s.translate(this.pos.x * SCALE_UNIT, this.pos.y * SCALE_UNIT, 0);
+    this.s.translate(
+      this.position.x * SCALE_UNIT,
+      this.position.y * SCALE_UNIT,
+      0,
+    );
     this.s.rotateX(this.rotation.x);
     this.s.rotateY(this.rotation.y);
     this.s.rotateZ(this.rotation.z);
     this.s.scale(this.scale.x, this.scale.y, this.scale.z);
-    this._draw();
+    this.doAnimation();
+    const shouldDraw = this.shouldDraw();
+    if (this.animations.length == 0 && shouldDraw) this._draw();
     this.s.pop();
-    this.children.forEach((e) => e.draw());
+    if (shouldDraw) this.children.forEach((e) => e.draw());
   }
 
   doAnimation(): void {
     // console.log('GameObject doAnimation');
     if (this.animations.length > 0) {
-      this.animations[0].animate();
-      if (this.animations[0].isDone) {
-        this.animations.shift();
+      const lastIndex = this.animations.length - 1;
+      this.animations[lastIndex].animate();
+      if (this.animations[lastIndex].isDone) {
+        this.animations.pop();
       }
     }
+  }
+
+  shouldDraw(): boolean {
+    if (!this.gameRoot) return true;
+    return (
+      this.s.dist(
+        this.position.x,
+        this.position.y,
+        (this.gameRoot as GameRoot).cube.position.x,
+        (this.gameRoot as GameRoot).cube.position.y,
+      ) < 3
+    );
   }
 
   pushAnimation(animation: QAnimation): void {
@@ -55,5 +76,8 @@ export class GameObject {
   }
   unshiftAnimation(animation: QAnimation): void {
     this.animations.unshift(animation);
+  }
+  handleInput(keyCode: number): void {
+    this.children.forEach((e) => e.handleInput(keyCode));
   }
 }
