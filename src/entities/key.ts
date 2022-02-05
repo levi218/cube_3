@@ -3,6 +3,7 @@ import { QAnimation } from '@/common/qAnimation';
 import { KEY_COLORS, SCALE_UNIT } from '@/constants';
 import p5 from 'p5';
 import { Coordinate } from '../common/coordinate';
+import { Cube } from './cube';
 
 export class KeyConsumingAnimation extends QAnimation {
   constructor(s: p5, gameObject: GameObject, private target: GameObject) {
@@ -24,6 +25,7 @@ export class KeyConsumingAnimation extends QAnimation {
       this.s.lerp(this.gameObject.scale.y, 0, 0.05),
       this.s.lerp(this.gameObject.scale.z, 0, 0.05),
     );
+    (this.target as Cube).startKeyCollectAnimation(this.gameObject as Key);
     super.animate();
     if (this.gameObject.position.dist(this.target.position) < 0.5) {
       console.log('animation done111');
@@ -42,7 +44,7 @@ export class Key extends GameObject {
     pos: Coordinate,
     public isEnabled = true,
   ) {
-    super(gameRoot.s, pos, gameRoot);
+    super(gameRoot, pos);
   }
 
   keyLoot(target: GameObject): void {

@@ -30,14 +30,14 @@ export class DoorRingDisappearAnimation extends QAnimation {
 }
 export class DoorRing extends GameObject {
   constructor(
-    s: p5,
+    gameRoot: GameObject,
     pos: Coordinate,
     parent: Door,
     public color: number[],
     public index: number,
     public isEnabled: boolean,
   ) {
-    super(s, pos);
+    super(gameRoot, pos);
     this.parent = parent;
   }
   _draw(): void {
@@ -69,14 +69,14 @@ export class Door extends GameObject {
     position: Coordinate,
     ringStatuses: boolean[] = [],
   ) {
-    super(gameRoot.s, position, gameRoot);
+    super(gameRoot, position);
     if (ringStatuses.length > KEY_COLORS.length) {
       ringStatuses = ringStatuses.slice(0, KEY_COLORS.length);
     }
     ringStatuses.forEach((status, index) => {
       this.children.push(
         new DoorRing(
-          gameRoot.s,
+          gameRoot,
           position,
           this,
           KEY_COLORS[index],

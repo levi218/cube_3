@@ -4,13 +4,14 @@ import p5 from 'p5';
 import { Coordinate } from '@/common/coordinate';
 import { QAnimation } from '@/common/qAnimation';
 import { GameRoot } from './gameRoot';
+import { Key } from './key';
 const movementDirections = [
-  { x: 0, y: +1, z: 0 },
-  { x: 1, y: 0, z: 0 },
-  { x: 0, y: -1, z: 0 },
-  { x: -1, y: 0, z: 0 },
+  new Coordinate(0, +1, 0),
+  new Coordinate(1, 0, 0),
+  new Coordinate(0, -1, 0),
+  new Coordinate(-1, 0, 0),
 ];
-class CubeAnimation extends QAnimation {
+class CubeRollingAnimation extends QAnimation {
   constructor(
     s: p5,
     gameObject: GameObject,
@@ -75,13 +76,24 @@ class CubeAnimation extends QAnimation {
   }
 }
 
+class CubeKeyCollectingAnimation extends QAnimation {
+  constructor(s: p5, gameObject: GameObject, private key: Key) {
+    super(s, gameObject);
+  }
+
+  animate() {
+    super.animate();
+    (this.gameObject as Cube)._drawVision();
+    if (!this.key.isEnabled) this.finish();
+  }
+}
 export class Cube extends GameObject {
   constructor(
     gameRoot: GameObject,
     position: Coordinate,
     public facing = new Coordinate(0, 0, 1),
   ) {
-    super(gameRoot.s, position, gameRoot, gameRoot);
+    super(gameRoot, position);
   }
   _drawEye(): void {
     // CUBE's EYE WITH FIELD OF VISION
@@ -113,40 +125,53 @@ export class Cube extends GameObject {
     this.s.fill(255, 102, 94);
     this.s.box(SCALE_UNIT);
   }
+  _drawVision(): void {
+    // VISION CONE
+    //eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const gl = (
+      document.getElementById('defaultCanvas0') as HTMLCanvasElement
+    ).getContext('webgl');
+    gl.disable(gl.DEPTH_TEST);
+    this.s.push();
+    this.s.noStroke();
+    this.s.fill(200, 200, 0, 20);
+    this.s.rotateX(-this.s.PI / 2);
+    this.s.rotateY(this.time / 5000);
+    const coneHeight = 300;
+    this.s.translate(0, -50 - coneHeight / 2, 0);
+    this.s.cone(100, coneHeight, 10, 1, true);
+    this.s.pop();
+    gl.enable(gl.DEPTH_TEST);
+  }
+
   _draw(): void {
     // CUBE
     this._drawCube();
     this._drawEye();
-
-    // VISION CONE
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // const gl = (document.getElementById('defaultCanvas0') as any).getContext(
-    //   'webgl',
-    // );
-    // gl.disable(gl.DEPTH_TEST);
-    // s.push();
-    // s.noStroke();
-    // s.fill(200, 200, 0, 20);
-    // s.rotateX(-s.PI / 2);
-    // s.rotateY(time / 5000);
-    // const coneHeight = 200;
-    // s.translate(0, -50 - coneHeight / 2, 0);
-    // s.cone(150, coneHeight, 10, 1, true);
-    // s.pop();
-    // gl.enable(gl.DEPTH_TEST);
   }
 
   checkKeyInSight(): void {
     const gameRoot = this.gameRoot as GameRoot;
-    const keyIndex = gameRoot.keys.findIndex(
-      (e) =>
-        e.position.x == this.position.x + this.facing.x &&
-        e.position.y == this.position.y + this.facing.y,
+    const distances = Array(1)
+      .fill(undefined)
+      .map((_, i) => i + 1);
+    const keyIndexes = distances.map((d) =>
+      gameRoot.keys.findIndex(
+        (e) =>
+          e.position.x == this.position.x + this.facing.x * d &&
+          e.position.y == this.position.y + this.facing.y * d,
+      ),
     );
-    if (keyIndex != -1) {
-      gameRoot.door.disableRing(keyIndex);
-      gameRoot.keys[keyIndex].keyLoot(this);
-    }
+    keyIndexes.forEach((keyIndex) => {
+      if (keyIndex != -1) {
+        gameRoot.door.disableRing(keyIndex);
+        gameRoot.keys[keyIndex].keyLoot(this);
+      }
+    });
+  }
+
+  startKeyCollectAnimation(key: Key): void {
+    this.pushAnimation(new CubeKeyCollectingAnimation(this.s, this, key));
   }
 
   updateSideAndRotation(direction: Coordinate): void {
@@ -206,6 +231,9 @@ export class Cube extends GameObject {
     if (this.animations.length > 0) {
       return;
     }
+    const destination = Coordinate.add(this.position, direction);
+    if (!(this.gameRoot as GameRoot).map.isValidMoveDestination(destination))
+      return;
     // check z, choose animation, generate and add animation to array
     const offset = new Coordinate(
       (direction.x * SCALE_UNIT) / 2,
@@ -214,7 +242,9 @@ export class Cube extends GameObject {
       -SCALE_UNIT / 2,
     );
 
-    this.pushAnimation(new CubeAnimation(this.s, this, direction, offset));
+    this.pushAnimation(
+      new CubeRollingAnimation(this.s, this, direction, offset),
+    );
   }
 
   handleInput(keyCode: number): void {
@@ -240,7 +270,6 @@ export class Cube extends GameObject {
     if (direction) {
       //   console.log('rolling toward direction: ', direction);
       this.move(direction);
-      // if()
     }
   }
 }

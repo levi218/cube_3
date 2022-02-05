@@ -33,7 +33,7 @@ const sketch = (s: p5) => {
 
   s.draw = () => {
     // time += s.deltaTime;
-    s.camera(-400, -400, 1800, 0, 0, 0, 0, 0, -1);
+
     // s.ortho();
     // s.camera(1, 1, 600, 0, 0, 0, 0, 0, -1);
     // const currentPos = {

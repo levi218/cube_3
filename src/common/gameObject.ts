@@ -8,17 +8,21 @@ export class GameObject {
   static DEFAULT_SCALE = new Coordinate(1, 1, 1);
   static DEFAULT_ROTATION = new Coordinate(0, 0, 0);
   protected time = 0;
+  public s: p5;
+  public parent: GameObject;
   constructor(
-    public s: p5,
-    public position: Coordinate,
     public gameRoot: GameObject = undefined,
-    public parent: GameObject = undefined,
+    public position: Coordinate,
+    parent: GameObject = undefined,
     public scale = GameObject.DEFAULT_SCALE,
     public rotation = GameObject.DEFAULT_ROTATION,
     public children: GameObject[] = [],
     public animations: QAnimation[] = [],
   ) {
-    // console.log('GameObject created');
+    if (gameRoot) {
+      this.s = gameRoot.s;
+      this.parent = parent ? parent : gameRoot;
+    }
   }
 
   setup(): void {
@@ -35,7 +39,7 @@ export class GameObject {
     this.s.translate(
       this.position.x * SCALE_UNIT,
       this.position.y * SCALE_UNIT,
-      0,
+      this.position.z * SCALE_UNIT,
     );
     this.s.rotateX(this.rotation.x);
     this.s.rotateY(this.rotation.y);
